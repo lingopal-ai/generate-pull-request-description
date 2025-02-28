@@ -23,9 +23,9 @@ the description each time you push:
 
 ```yaml
 steps:
-- uses: actions/checkout@v3
+- uses: actions/checkout@v4
 
-- uses: tanmaypathak/generate-pull-request-description@v1.0.0
+- uses: lingopal-ai/generate-pull-request-description@main
   id: pr-description
   with:
     pull_request_url: ${{ github.event.pull_request.url }}
