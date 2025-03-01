@@ -25,7 +25,7 @@ outputs:
 
 runs:
    using: 'docker'
-   image: 'docker://lingopal-ai/generate-pull-request-description:latest'
+   image: 'Dockerfile'
    args:
      - ${{ inputs.pull_request_url }}
      - ${{ inputs.api_token }}
