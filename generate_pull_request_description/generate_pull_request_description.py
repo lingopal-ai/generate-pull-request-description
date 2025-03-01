@@ -383,11 +383,11 @@ class PullRequestDescriptionGenerator:
             if not notes or heading in {OTHER_SECTION_HEADING, UNCATEGORISED_SECTION_HEADING}:
                 continue
 
-            contents_section += self._create_contents_subsection(heading=heading, notes=notes)
+            contents_section += self._create_contents_subsection(heading=heading, scoped_notes=notes)
 
         for heading in (OTHER_SECTION_HEADING, UNCATEGORISED_SECTION_HEADING):
             if notes := categorised_commit_messages[heading]:
-                contents_section += self._create_contents_subsection(heading=heading, notes=notes)
+                contents_section += self._create_contents_subsection(heading=heading, scoped_notes=notes)
 
         return contents_section
 
