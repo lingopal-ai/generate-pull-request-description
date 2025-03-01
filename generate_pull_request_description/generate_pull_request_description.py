@@ -113,6 +113,7 @@ class PullRequestDescriptionGenerator:
         )
         self.include_link_to_pull_request = include_link_to_pull_request
 
+        logger.info(f"Args: {self.__dict__}")
         logger.info(f"Using {self.stop_point!r} stop point.")
 
     def generate(self):
