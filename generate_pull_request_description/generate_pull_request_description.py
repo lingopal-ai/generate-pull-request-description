@@ -373,16 +373,19 @@ class PullRequestDescriptionGenerator:
                     categorised_commits[OTHER_SECTION_HEADING]["Miscellaneous"].append(header)
                     commit_message_tracker[OTHER_SECTION_HEADING]["Miscellaneous"].add(lowercase_header)
 
-        # Handle uncategorized commits (with case-insensitive duplicate removal)
-        if "Miscellaneous" not in categorised_commits[UNCATEGORISED_SECTION_HEADING]:
-            categorised_commits[UNCATEGORISED_SECTION_HEADING]["Miscellaneous"] = []
-            commit_message_tracker[UNCATEGORISED_SECTION_HEADING]["Miscellaneous"] = set()
-            
-        for commit in unparsed_commits:
-            lowercase_commit = commit.lower()
-            if lowercase_commit not in commit_message_tracker[UNCATEGORISED_SECTION_HEADING]["Miscellaneous"]:
-                categorised_commits[UNCATEGORISED_SECTION_HEADING]["Miscellaneous"].append(commit)
-                commit_message_tracker[UNCATEGORISED_SECTION_HEADING]["Miscellaneous"].add(lowercase_commit)
+        try:
+            # Handle uncategorized commits (with case-insensitive duplicate removal)
+            if "Miscellaneous" not in categorised_commits[UNCATEGORISED_SECTION_HEADING]:
+                categorised_commits[UNCATEGORISED_SECTION_HEADING]["Miscellaneous"] = []
+                commit_message_tracker[UNCATEGORISED_SECTION_HEADING]["Miscellaneous"] = set()
+                
+            for commit in unparsed_commits:
+                lowercase_commit = commit.lower()
+                if lowercase_commit not in commit_message_tracker[UNCATEGORISED_SECTION_HEADING]["Miscellaneous"]:
+                    categorised_commits[UNCATEGORISED_SECTION_HEADING]["Miscellaneous"].append(commit)
+                    commit_message_tracker[UNCATEGORISED_SECTION_HEADING]["Miscellaneous"].add(lowercase_commit)
+        except KeyError:
+            logger.warning("Uncategorised commits could not be added to the release notes.")
         
         return categorised_commits, breaking_change_upgrade_instructions
 
