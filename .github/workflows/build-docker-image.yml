@@ -27,4 +27,4 @@ jobs:
         with:
           context: .
           push: true
-          tags: tanmaypathak/generate-pull-request-description:latest
+          tags: lingopal-ai/generate-pull-request-description:latest

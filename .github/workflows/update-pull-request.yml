@@ -19,7 +19,7 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - uses: tanmay-pathak/generate-pull-request-description@main
+    - uses: lingopal-ai/generate-pull-request-description@main
       id: pull-request-description
       with:
         pull_request_url: ${{ github.event.pull_request.url }}

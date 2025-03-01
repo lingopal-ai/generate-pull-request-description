@@ -1,6 +1,6 @@
 name: 'Conventional Commits Changelog Generator'
 description: "Generate a structured changelog from conventional commits in your pull request."
-author: 'tanmay-pathak'
+author: 'lingopal-ai'
 branding:
   icon: git-pull-request
   color: green
@@ -25,7 +25,7 @@ outputs:
 
 runs:
    using: 'docker'
-   image: 'docker://tanmaypathak/generate-pull-request-description:latest'
+   image: 'docker://lingopal-ai/generate-pull-request-description:latest'
    args:
      - ${{ inputs.pull_request_url }}
      - ${{ inputs.api_token }}
