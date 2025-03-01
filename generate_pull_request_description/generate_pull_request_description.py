@@ -378,16 +378,22 @@ class PullRequestDescriptionGenerator:
         if breaking_change_count:
             contents_section += self._create_breaking_change_warning(breaking_change_count)
 
-        for heading, notes in categorised_commit_messages.items():
-            # Save "Other" and "Uncategorised" sections for end of release notes.
-            if not notes or heading in {OTHER_SECTION_HEADING, UNCATEGORISED_SECTION_HEADING}:
+        # Process regular sections first (excluding OTHER and UNCATEGORISED)
+        for heading, scoped_notes in categorised_commit_messages.items():
+            # Skip special sections and empty sections
+            if (heading in {OTHER_SECTION_HEADING, UNCATEGORISED_SECTION_HEADING, BREAKING_CHANGE_COUNT_KEY} or
+                    not scoped_notes or not any(notes for scope, notes in scoped_notes.items())):
                 continue
 
-            contents_section += self._create_contents_subsection(heading=heading, scoped_notes=notes)
+            contents_section += self._create_contents_subsection(heading=heading, scoped_notes=scoped_notes)
 
+        # Process OTHER and UNCATEGORISED sections last, but only if they have content
         for heading in (OTHER_SECTION_HEADING, UNCATEGORISED_SECTION_HEADING):
-            if notes := categorised_commit_messages[heading]:
-                contents_section += self._create_contents_subsection(heading=heading, scoped_notes=notes)
+            scoped_notes = categorised_commit_messages.get(heading, {})
+            
+            # Check if there are any actual notes in any of the scopes
+            if scoped_notes and any(notes for scope, notes in scoped_notes.items()):
+                contents_section += self._create_contents_subsection(heading=heading, scoped_notes=scoped_notes)
 
         return contents_section
 
@@ -417,7 +423,8 @@ class PullRequestDescriptionGenerator:
                 continue
                 
             # Add a subheading for the scope
-            subsection += f"#### {scope}\n"
+            formatted_scope = re.sub(r'[-_]+', ' ', scope).title()
+            subsection += f"#### {formatted_scope}\n"
             
             # Add the bulleted list of notes under this scope
             note_lines = "\n".join(self.list_item_symbol + " " + note for note in notes)
