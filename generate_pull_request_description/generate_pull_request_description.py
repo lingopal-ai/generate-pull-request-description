@@ -486,7 +486,7 @@ class PullRequestDescriptionGenerator:
                     tickets.append(match)
 
 
-        contents_section += f"{self.header}\n\n"
+        # contents_section += f"{self.header}\n\n"
         
         if tickets:
             contents_section += "# Tickets\n"
