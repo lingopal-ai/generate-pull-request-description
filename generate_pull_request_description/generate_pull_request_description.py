@@ -565,7 +565,7 @@ class PullRequestDescriptionGenerator:
 
             # Add the bulleted list of notes under this scope
             note_lines = "\n".join(
-                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; • " + (note[:1].upper() + note[1:])
+                self.list_item_symbol + " " + (note[:1].upper() + note[1:])
                 for note in notes
             )
             subsection += f"{note_lines}\n\n"
