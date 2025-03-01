@@ -562,7 +562,7 @@ class PullRequestDescriptionGenerator:
 
             # Add a subheading for the scope
             formatted_scope = re.sub(r"[-_]+", " ", scope).title()
-            subsection += f"### &nbsp;&nbsp; {formatted_scope}\n"
+            subsection += f"### {formatted_scope}\n"
 
             # Add the bulleted list of notes under this scope
             note_lines = "\n".join(
