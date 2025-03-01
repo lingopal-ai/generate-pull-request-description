@@ -83,8 +83,8 @@ class PullRequestDescriptionGenerator:
         stop_point,
         pull_request_url=None,
         api_token=None,
-        header="# Changelog",
-        list_item_symbol="-",
+        header="<h1 align='center'>Changelog</h1>",
+        list_item_symbol="•",
         commit_codes_to_headings_mapping=None,
         include_link_to_pull_request=True,
     ):
@@ -561,11 +561,11 @@ class PullRequestDescriptionGenerator:
 
             # Add a subheading for the scope
             formatted_scope = re.sub(r"[-_]+", " ", scope).title()
-            subsection += f"### {formatted_scope}\n"
+            subsection += f"### &nbsp;&nbsp; {formatted_scope}\n"
 
             # Add the bulleted list of notes under this scope
             note_lines = "\n".join(
-                self.list_item_symbol + " " + (note[:1].upper() + note[1:])
+                "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;"+self.list_item_symbol + " " + (note[:1].upper() + note[1:])
                 for note in notes
             )
             subsection += f"{note_lines}\n\n"
