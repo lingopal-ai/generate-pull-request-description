@@ -18,7 +18,7 @@ inputs:
   list_item_symbol:
     description: 'The MarkDown list item symbol to use for listing commit messages in the release notes.'
     required: false
-    default: '•'
+    default: '-'
 outputs:
   pull_request_description:
     description: 'The generated pull request description.'
@@ -29,5 +29,4 @@ runs:
    args:
      - ${{ inputs.pull_request_url }}
      - ${{ inputs.api_token }}
-     - ${{ inputs.header }}
      - ${{ inputs.list_item_symbol }}
