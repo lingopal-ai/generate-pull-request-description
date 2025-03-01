@@ -30,4 +30,3 @@ runs:
      - ${{ inputs.pull_request_url }}
      - ${{ inputs.api_token }}
      - ${{ inputs.header }}
-     - ${{ inputs.list_item_symbol }}
