@@ -29,7 +29,7 @@ COMMIT_CODES_TO_HEADINGS_MAPPING = {
     "fix": "### 🐛 Bug Fixes",
     "docs": "### 📚 Documentation",
     "style": "### 💅 Style",
-    "refactor": "#### ♻️ Refactoring",
+    "refactor": "### ♻️ Refactoring",
     "perf": "### ⚡️ Performance Improvements",
     "test": "### 🧪 Tests",
     "build": "### 🏗️ Build System",
@@ -278,25 +278,33 @@ class PullRequestDescriptionGenerator:
         return parsed_commits, unparsed_commits
 
     def _categorise_commit_messages(self, parsed_commits, unparsed_commits):
-        """Categorise the commit messages into headed sections. Unparsed commits are put under an "uncategorised"
-        header.
+        """Categorise the commit messages into headed sections, with subgroups based on scope.
+        Unparsed commits are put under an "uncategorised" header.
 
-        :param iter(tuple)) parsed_commits:
+        :param iter(tuple) parsed_commits:
         :param iter(str) unparsed_commits:
-        :return (dict, list): a mapping of section headers to the commit headers that belong to them and a list of breaking change commits
+        :return (dict, list): a mapping of section headers to a dict of scopes and their commits, and a list of breaking change commits
         """
-        categorised_commits = {heading: [] for heading in self.commit_codes_to_headings_mapping.values()}
+        # Initialize with an empty dict for each heading instead of a list
+        categorised_commits = {heading: {} for heading in self.commit_codes_to_headings_mapping.values()}
         categorised_commits[BREAKING_CHANGE_COUNT_KEY] = 0
 
         breaking_change_upgrade_instructions = []
 
         for code, scope, header, body in parsed_commits:
             try:
-                # Format the commit note with scope if present
-                formatted_header = f"({scope}) {header}" if scope else header
+                # Use "Miscellaneous" if no scope is provided
+                effective_scope = scope if scope else "Miscellaneous"
+                
+                # Get the appropriate heading for this commit type
+                heading = self.commit_codes_to_headings_mapping[code]
+                
+                # Initialize the scope dict if it doesn't exist
+                if effective_scope not in categorised_commits[heading]:
+                    categorised_commits[heading][effective_scope] = []
 
                 if any(indicator in body for indicator in CONVENTIONAL_COMMIT_BREAKING_CHANGE_INDICATORS):
-                    commit_note = BREAKING_CHANGE_INDICATOR + formatted_header
+                    commit_note = BREAKING_CHANGE_INDICATOR + header
                     categorised_commits[BREAKING_CHANGE_COUNT_KEY] += 1
 
                     # Remove the breaking change indicator from the body and put the body in a collapsible section
@@ -305,20 +313,25 @@ class PullRequestDescriptionGenerator:
 
                     breaking_change_upgrade_instructions.append(
                         "<details>\n"
-                        f"<summary>💥 <b>{formatted_header}</b></summary>\n"
+                        f"<summary>💥 <b>({effective_scope}) {header}</b></summary>\n"
                         f"\n{upgrade_instruction}\n"
                         "</details>"
                     )
-
                 else:
-                    commit_note = formatted_header
+                    commit_note = header
 
-                categorised_commits[self.commit_codes_to_headings_mapping[code]].append(commit_note)
+                # Add the commit to the appropriate section and scope
+                categorised_commits[heading][effective_scope].append(commit_note)
 
             except KeyError:
-                categorised_commits[OTHER_SECTION_HEADING].append(header)
+                # For commits with unknown types, add them to the OTHER section
+                if "Miscellaneous" not in categorised_commits[OTHER_SECTION_HEADING]:
+                    categorised_commits[OTHER_SECTION_HEADING]["Miscellaneous"] = []
+                categorised_commits[OTHER_SECTION_HEADING]["Miscellaneous"].append(header)
 
-        categorised_commits[UNCATEGORISED_SECTION_HEADING] = unparsed_commits
+        # Handle uncategorized commits
+        categorised_commits[UNCATEGORISED_SECTION_HEADING] = {"Miscellaneous": unparsed_commits}
+        
         return categorised_commits, breaking_change_upgrade_instructions
 
     def _build_release_notes(self, categorised_commit_messages, upgrade_instructions):
@@ -389,16 +402,28 @@ class PullRequestDescriptionGenerator:
 
         return f"**IMPORTANT:** There are {breaking_change_count} breaking changes.\n\n"
 
-    def _create_contents_subsection(self, heading, notes):
-        """Create a section of the release notes with the given heading followed by th5e given notes formatted into a
-        bulleted list.
+    def _create_contents_subsection(self, heading, scoped_notes):
+        """Create a section of the release notes with the given heading followed by scoped subsections
+        containing the notes formatted into bulleted lists.
 
         :param str heading:
-        :param list(str) notes:
+        :param dict scoped_notes: A dictionary mapping scopes to lists of notes
         :return str:
         """
-        note_lines = "\n".join(self.list_item_symbol + " " + note for note in notes)
-        return f"{heading}\n{note_lines}\n\n"
+        subsection = f"{heading}\n"
+        
+        for scope, notes in sorted(scoped_notes.items()):
+            if not notes:
+                continue
+                
+            # Add a subheading for the scope
+            subsection += f"#### {scope}\n"
+            
+            # Add the bulleted list of notes under this scope
+            note_lines = "\n".join(self.list_item_symbol + " " + note for note in notes)
+            subsection += f"{note_lines}\n\n"
+        
+        return subsection
 
     def _create_breaking_change_upgrade_section(self, upgrade_instructions):
         """Create an upgrade section explaining how to update to deal with breaking changes.
