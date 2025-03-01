@@ -14,7 +14,7 @@ inputs:
   header:
     description: 'The header (including MarkDown styling) to put the release notes under.'
     required: false
-    default: '<h1 align="center">Changelog</h1>'
+    default: ''
   list_item_symbol:
     description: 'The MarkDown list item symbol to use for listing commit messages in the release notes.'
     required: false
@@ -30,3 +30,4 @@ runs:
      - ${{ inputs.pull_request_url }}
      - ${{ inputs.api_token }}
      - ${{ inputs.list_item_symbol }}
+     - ${{ inputs.header }}
