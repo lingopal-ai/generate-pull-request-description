@@ -27,30 +27,30 @@ OTHER_SECTION_HEADING = "### 🔀 Other"
 UNCATEGORISED_SECTION_HEADING = "### ❓ Uncategorised!"
 
 COMMIT_CODES_TO_HEADINGS_MAPPING = {
-    "feat": "### ✨ New Features",
-    "fix": "### 🐛 Bug Fixes",
-    "docs": "### 📚 Documentation",
-    "style": "### 💅 Style",
-    "refactor": "### ♻️ Refactoring",
-    "perf": "### ⚡️ Performance Improvements",
-    "test": "### 🧪 Tests",
-    "build": "### 🏗️ Build System",
-    "ci": "### 🤖 CI",
-    "chore": "### 🧹 Chores",
+    "feat": "## ✨ New Features",
+    "fix": "## 🐛 Bug Fixes",
+    "docs": "## 📚 Documentation",
+    "style": "## 💅 Style",
+    "refactor": "## ♻️ Refactoring",
+    "perf": "## ⚡️ Performance Improvements",
+    "test": "## 🧪 Tests",
+    "build": "## 🏗️ Build System",
+    "ci": "## 🤖 CI",
+    "chore": "## 🧹 Chores",
     # Legacy mappings for backward compatibility
-    "FEA": "### ✨ New features",
-    "ENH": "### 🚀 Enhancements",
-    "FIX": "### 🐛 Fixes",
-    "OPS": "### 🔧 Operations",
-    "DEP": "### 📦 Dependencies",
-    "REF": "### ♻️ Refactoring",
-    "TST": "### 🧪 Testing",
-    "MRG": "### 🔀 Other",
-    "REV": "### ⏮️ Reversions",
-    "CHO": "### 🧹 Chores",
-    "STY": "### 💅 Style",
-    "WIP": "### 🚧 Other",
-    "DOC": "### 📚 Other",
+    "FEA": "## ✨ New features",
+    "ENH": "## 🚀 Enhancements",
+    "FIX": "## 🐛 Fixes",
+    "OPS": "## 🔧 Operations",
+    "DEP": "## 📦 Dependencies",
+    "REF": "## ♻️ Refactoring",
+    "TST": "## 🧪 Testing",
+    "MRG": "## 🔀 Other",
+    "REV": "## ⏮️ Reversions",
+    "CHO": "## 🧹 Chores",
+    "STY": "## 💅 Style",
+    "WIP": "## 🚧 Other",
+    "DOC": "## 📚 Other",
 }
 
 BREAKING_CHANGE_COUNT_KEY = "BREAKING CHANGE COUNT"
@@ -83,7 +83,7 @@ class PullRequestDescriptionGenerator:
         stop_point,
         pull_request_url=None,
         api_token=None,
-        header="## Changelog",
+        header="# Changelog",
         list_item_symbol="-",
         commit_codes_to_headings_mapping=None,
         include_link_to_pull_request=True,
@@ -440,6 +440,8 @@ class PullRequestDescriptionGenerator:
                 or not any(notes for scope, notes in scoped_notes.items())
             ):
                 continue
+
+            contents_section += "--- \n"
 
             contents_section += self._create_contents_subsection(
                 heading=heading, scoped_notes=scoped_notes
