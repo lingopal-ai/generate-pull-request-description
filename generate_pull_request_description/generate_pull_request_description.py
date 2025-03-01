@@ -308,16 +308,20 @@ class PullRequestDescriptionGenerator:
     def _categorise_commit_messages(self, parsed_commits, unparsed_commits):
         """Categorise the commit messages into headed sections, with subgroups based on scope.
         Unparsed commits are put under an "uncategorised" header.
+        Duplicate commit messages are removed (case-insensitive).
 
         :param iter(tuple) parsed_commits:
         :param iter(str) unparsed_commits:
         :return (dict, list): a mapping of section headers to a dict of scopes and their commits, and a list of breaking change commits
         """
         # Initialize with an empty dict for each heading instead of a list
-        categorised_commits = {
-            heading: {} for heading in self.commit_codes_to_headings_mapping.values()
-        }
+        categorised_commits = {heading: {} for heading in self.commit_codes_to_headings_mapping.values()}
         categorised_commits[BREAKING_CHANGE_COUNT_KEY] = 0
+
+        # Track lowercase versions of commit messages for case-insensitive duplicate detection
+        commit_message_tracker = {heading: {} for heading in self.commit_codes_to_headings_mapping.values()}
+        commit_message_tracker[OTHER_SECTION_HEADING] = {"Miscellaneous": set()}
+        commit_message_tracker[UNCATEGORISED_SECTION_HEADING] = {"Miscellaneous": set()}
 
         breaking_change_upgrade_instructions = []
 
@@ -325,18 +329,16 @@ class PullRequestDescriptionGenerator:
             try:
                 # Use "Miscellaneous" if no scope is provided
                 effective_scope = scope if scope else "Miscellaneous"
-
+                
                 # Get the appropriate heading for this commit type
                 heading = self.commit_codes_to_headings_mapping[code]
-
+                
                 # Initialize the scope dict if it doesn't exist
                 if effective_scope not in categorised_commits[heading]:
                     categorised_commits[heading][effective_scope] = []
+                    commit_message_tracker[heading][effective_scope] = set()
 
-                if any(
-                    indicator in body
-                    for indicator in CONVENTIONAL_COMMIT_BREAKING_CHANGE_INDICATORS
-                ):
+                if any(indicator in body for indicator in CONVENTIONAL_COMMIT_BREAKING_CHANGE_INDICATORS):
                     commit_note = BREAKING_CHANGE_INDICATOR + header
                     categorised_commits[BREAKING_CHANGE_COUNT_KEY] += 1
 
@@ -353,22 +355,35 @@ class PullRequestDescriptionGenerator:
                 else:
                     commit_note = header
 
-                # Add the commit to the appropriate section and scope
-                categorised_commits[heading][effective_scope].append(commit_note)
+                # Case-insensitive duplicate check
+                lowercase_note = commit_note.lower()
+                if lowercase_note not in commit_message_tracker[heading][effective_scope]:
+                    categorised_commits[heading][effective_scope].append(commit_note)
+                    commit_message_tracker[heading][effective_scope].add(lowercase_note)
 
             except KeyError:
                 # For commits with unknown types, add them to the OTHER section
                 if "Miscellaneous" not in categorised_commits[OTHER_SECTION_HEADING]:
                     categorised_commits[OTHER_SECTION_HEADING]["Miscellaneous"] = []
-                categorised_commits[OTHER_SECTION_HEADING]["Miscellaneous"].append(
-                    header
-                )
+                    commit_message_tracker[OTHER_SECTION_HEADING]["Miscellaneous"] = set()
+                    
+                # Case-insensitive duplicate check
+                lowercase_header = header.lower()
+                if lowercase_header not in commit_message_tracker[OTHER_SECTION_HEADING]["Miscellaneous"]:
+                    categorised_commits[OTHER_SECTION_HEADING]["Miscellaneous"].append(header)
+                    commit_message_tracker[OTHER_SECTION_HEADING]["Miscellaneous"].add(lowercase_header)
 
-        # Handle uncategorized commits
-        categorised_commits[UNCATEGORISED_SECTION_HEADING] = {
-            "Miscellaneous": unparsed_commits
-        }
-
+        # Handle uncategorized commits (with case-insensitive duplicate removal)
+        if "Miscellaneous" not in categorised_commits[UNCATEGORISED_SECTION_HEADING]:
+            categorised_commits[UNCATEGORISED_SECTION_HEADING]["Miscellaneous"] = []
+            commit_message_tracker[UNCATEGORISED_SECTION_HEADING]["Miscellaneous"] = set()
+            
+        for commit in unparsed_commits:
+            lowercase_commit = commit.lower()
+            if lowercase_commit not in commit_message_tracker[UNCATEGORISED_SECTION_HEADING]["Miscellaneous"]:
+                categorised_commits[UNCATEGORISED_SECTION_HEADING]["Miscellaneous"].append(commit)
+                commit_message_tracker[UNCATEGORISED_SECTION_HEADING]["Miscellaneous"].add(lowercase_commit)
+        
         return categorised_commits, breaking_change_upgrade_instructions
 
     def _build_release_notes(self, categorised_commit_messages, upgrade_instructions):
@@ -441,8 +456,6 @@ class PullRequestDescriptionGenerator:
             ):
                 continue
 
-            contents_section += "--- \n"
-
             contents_section += self._create_contents_subsection(
                 heading=heading, scoped_notes=scoped_notes
             )
@@ -488,11 +501,11 @@ class PullRequestDescriptionGenerator:
 
             # Add a subheading for the scope
             formatted_scope = re.sub(r"[-_]+", " ", scope).title()
-            subsection += f"- #### {formatted_scope}\n"
+            subsection += f"### {formatted_scope}\n"
 
             # Add the bulleted list of notes under this scope
             note_lines = "\n".join(
-                "  " + self.list_item_symbol + " " + (note[:1].upper() + note[1:])
+                self.list_item_symbol + " " + (note[:1].upper() + note[1:])
                 for note in notes
             )
             subsection += f"{note_lines}\n\n"
