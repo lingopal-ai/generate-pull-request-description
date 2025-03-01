@@ -315,11 +315,15 @@ class PullRequestDescriptionGenerator:
         :return (dict, list): a mapping of section headers to a dict of scopes and their commits, and a list of breaking change commits
         """
         # Initialize with an empty dict for each heading instead of a list
-        categorised_commits = {heading: {} for heading in self.commit_codes_to_headings_mapping.values()}
+        categorised_commits = {
+            heading: {} for heading in self.commit_codes_to_headings_mapping.values()
+        }
         categorised_commits[BREAKING_CHANGE_COUNT_KEY] = 0
 
         # Track lowercase versions of commit messages for case-insensitive duplicate detection
-        commit_message_tracker = {heading: {} for heading in self.commit_codes_to_headings_mapping.values()}
+        commit_message_tracker = {
+            heading: {} for heading in self.commit_codes_to_headings_mapping.values()
+        }
         commit_message_tracker[OTHER_SECTION_HEADING] = {"Miscellaneous": set()}
         commit_message_tracker[UNCATEGORISED_SECTION_HEADING] = {"Miscellaneous": set()}
 
@@ -329,16 +333,19 @@ class PullRequestDescriptionGenerator:
             try:
                 # Use "Miscellaneous" if no scope is provided
                 effective_scope = scope if scope else "Miscellaneous"
-                
+
                 # Get the appropriate heading for this commit type
                 heading = self.commit_codes_to_headings_mapping[code]
-                
+
                 # Initialize the scope dict if it doesn't exist
                 if effective_scope not in categorised_commits[heading]:
                     categorised_commits[heading][effective_scope] = []
                     commit_message_tracker[heading][effective_scope] = set()
 
-                if any(indicator in body for indicator in CONVENTIONAL_COMMIT_BREAKING_CHANGE_INDICATORS):
+                if any(
+                    indicator in body
+                    for indicator in CONVENTIONAL_COMMIT_BREAKING_CHANGE_INDICATORS
+                ):
                     commit_note = BREAKING_CHANGE_INDICATOR + header
                     categorised_commits[BREAKING_CHANGE_COUNT_KEY] += 1
 
@@ -357,7 +364,10 @@ class PullRequestDescriptionGenerator:
 
                 # Case-insensitive duplicate check
                 lowercase_note = commit_note.lower()
-                if lowercase_note not in commit_message_tracker[heading][effective_scope]:
+                if (
+                    lowercase_note
+                    not in commit_message_tracker[heading][effective_scope]
+                ):
                     categorised_commits[heading][effective_scope].append(commit_note)
                     commit_message_tracker[heading][effective_scope].add(lowercase_note)
 
@@ -365,28 +375,55 @@ class PullRequestDescriptionGenerator:
                 # For commits with unknown types, add them to the OTHER section
                 if "Miscellaneous" not in categorised_commits[OTHER_SECTION_HEADING]:
                     categorised_commits[OTHER_SECTION_HEADING]["Miscellaneous"] = []
-                    commit_message_tracker[OTHER_SECTION_HEADING]["Miscellaneous"] = set()
-                    
+                    commit_message_tracker[OTHER_SECTION_HEADING]["Miscellaneous"] = (
+                        set()
+                    )
+
                 # Case-insensitive duplicate check
                 lowercase_header = header.lower()
-                if lowercase_header not in commit_message_tracker[OTHER_SECTION_HEADING]["Miscellaneous"]:
-                    categorised_commits[OTHER_SECTION_HEADING]["Miscellaneous"].append(header)
-                    commit_message_tracker[OTHER_SECTION_HEADING]["Miscellaneous"].add(lowercase_header)
+                if (
+                    lowercase_header
+                    not in commit_message_tracker[OTHER_SECTION_HEADING][
+                        "Miscellaneous"
+                    ]
+                ):
+                    categorised_commits[OTHER_SECTION_HEADING]["Miscellaneous"].append(
+                        header
+                    )
+                    commit_message_tracker[OTHER_SECTION_HEADING]["Miscellaneous"].add(
+                        lowercase_header
+                    )
 
         try:
             # Handle uncategorized commits (with case-insensitive duplicate removal)
-            if "Miscellaneous" not in categorised_commits[UNCATEGORISED_SECTION_HEADING]:
+            if (
+                "Miscellaneous"
+                not in categorised_commits[UNCATEGORISED_SECTION_HEADING]
+            ):
                 categorised_commits[UNCATEGORISED_SECTION_HEADING]["Miscellaneous"] = []
-                commit_message_tracker[UNCATEGORISED_SECTION_HEADING]["Miscellaneous"] = set()
-                
+                commit_message_tracker[UNCATEGORISED_SECTION_HEADING][
+                    "Miscellaneous"
+                ] = set()
+
             for commit in unparsed_commits:
                 lowercase_commit = commit.lower()
-                if lowercase_commit not in commit_message_tracker[UNCATEGORISED_SECTION_HEADING]["Miscellaneous"]:
-                    categorised_commits[UNCATEGORISED_SECTION_HEADING]["Miscellaneous"].append(commit)
-                    commit_message_tracker[UNCATEGORISED_SECTION_HEADING]["Miscellaneous"].add(lowercase_commit)
+                if (
+                    lowercase_commit
+                    not in commit_message_tracker[UNCATEGORISED_SECTION_HEADING][
+                        "Miscellaneous"
+                    ]
+                ):
+                    categorised_commits[UNCATEGORISED_SECTION_HEADING][
+                        "Miscellaneous"
+                    ].append(commit)
+                    commit_message_tracker[UNCATEGORISED_SECTION_HEADING][
+                        "Miscellaneous"
+                    ].add(lowercase_commit)
         except KeyError:
-            logger.warning("Uncategorised commits could not be added to the release notes.")
-        
+            logger.warning(
+                "Uncategorised commits could not be added to the release notes."
+            )
+
         return categorised_commits, breaking_change_upgrade_instructions
 
     def _build_release_notes(self, categorised_commit_messages, upgrade_instructions):
@@ -437,7 +474,27 @@ class PullRequestDescriptionGenerator:
         # else:
         #     link_to_pull_request = ""
 
-        contents_section = f"{self.header}\n\n"
+        contents_section = ""
+
+        ticket_re = re.compile(r"[a-zA-Z]{2,6}-\d+")
+        tickets = []
+
+        for heading, notes in categorised_commit_messages.items():
+            for note in notes:
+                matches = ticket_re.findall(note)
+                for match in matches:
+                    tickets.append(match)
+
+
+        contents_section += f"{self.header}\n\n"
+        
+        if tickets:
+            contents_section += "## Tickets\n"
+            # Dedup keys maintaining insertion order using dict.fromkeys(tickets).keys() instead of set(tickets)
+            contents_section += "\n".join(
+                self.list_item_symbol + " " + note
+                for note in dict.fromkeys(tickets).keys()
+            )
 
         if breaking_change_count:
             contents_section += self._create_breaking_change_warning(
