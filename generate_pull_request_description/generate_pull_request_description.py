@@ -531,7 +531,7 @@ class PullRequestDescriptionGenerator:
         # contents_section += f"{self.header}\n\n"
 
         if tickets:
-            contents_section += "# Tickets\n\n"
+            contents_section += "## 🎫 Tickets\n\n"
             # Dedup keys maintaining insertion order using dict.fromkeys(tickets).keys() instead of set(tickets)
             contents_section += "\n".join(
                 " - " + note for note in dict.fromkeys(tickets).keys()
