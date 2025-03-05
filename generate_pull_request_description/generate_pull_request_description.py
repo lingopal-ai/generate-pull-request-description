@@ -472,7 +472,10 @@ class PullRequestDescriptionGenerator:
         tickets = set()
         formatted_categorised_messages = {}
 
-        logger.warning(f"PR:{self.current_pull_request['title']}")
+        # Extract ticket IDs from the pull request title
+        matches = ticket_re.findall(self.current_pull_request['title'])
+        for match in matches:
+            tickets.add(f"[{match}]({JIRA_URL_PREFIX + match})")
 
         for heading, scoped_notes in categorised_commit_messages.items():
             formatted_scoped_notes = {}
