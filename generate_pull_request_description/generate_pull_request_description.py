@@ -497,7 +497,7 @@ class PullRequestDescriptionGenerator:
 
         def extract_ticket_number(link: str) -> int:
             # Extract ticket number from markdown link
-            match = ticket_re.search(link)
+            match = re.search(r'\[DEV-(\d+)\]', link)
             return int(match.group(1)) if match else float('inf')
 
         return sorted(tickets, key=extract_ticket_number), formatted_categorised_messages
