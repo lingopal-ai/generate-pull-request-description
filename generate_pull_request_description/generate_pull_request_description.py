@@ -480,10 +480,10 @@ class PullRequestDescriptionGenerator:
         ticket_re = re.compile(r"[a-zA-Z]{2,6}-\d+")
         tickets = []
 
-        logger.warning(f"Commits: {categorised_commit_messages}")
 
         for heading, notes in categorised_commit_messages.items():
             for note in notes:
+                logger.warning(f"Commits: {note}")
                 matches = ticket_re.findall(note)
                 for match in matches:
                     tickets.append(match)
