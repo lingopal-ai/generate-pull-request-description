@@ -520,6 +520,8 @@ class PullRequestDescriptionGenerator:
                 self.list_item_symbol + note
                 for note in dict.fromkeys(tickets).keys()
             )
+        
+            contents_section += "\n\n"
 
         if breaking_change_count:
             contents_section += self._create_breaking_change_warning(
