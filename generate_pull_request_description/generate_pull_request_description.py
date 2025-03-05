@@ -472,7 +472,11 @@ class PullRequestDescriptionGenerator:
         tickets = set()
         formatted_categorised_messages = {}
 
-        # Extract ticket IDs from the pull request title
+        # Extract ticket IDs from the branch name and PR title
+        matches = ticket_re.findall(self.current_pull_request['head']["ref"])
+        for match in matches:
+            tickets.add(f"[{match}]({JIRA_URL_PREFIX + match})")
+        
         matches = ticket_re.findall(self.current_pull_request['title'])
         for match in matches:
             tickets.add(f"[{match}]({JIRA_URL_PREFIX + match})")
