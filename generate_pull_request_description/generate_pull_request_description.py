@@ -7,7 +7,7 @@ import requests
 
 logger = logging.getLogger(__name__)
 
-
+JIRA_URL_PREFIX = "https://lingopal.atlassian.net/browse/"
 CONVENTIONAL_COMMIT_BREAKING_CHANGE_INDICATORS = {"BREAKING-CHANGE", "BREAKING CHANGE"}
 
 LAST_RELEASE = "LAST_RELEASE"
@@ -461,10 +461,10 @@ class PullRequestDescriptionGenerator:
     def _extract_and_format_tickets(self, categorised_commit_messages):
         """
         Extract unique ticket IDs from commit messages and format them in notes.
-        
+
         Args:
             categorised_commit_messages (Dict): Nested dictionary of commit messages
-        
+
         Returns:
             List[str]: List of unique ticket IDs
         """
@@ -479,14 +479,14 @@ class PullRequestDescriptionGenerator:
                 for note in notes:
                     # Find and extract ticket IDs
                     matches = ticket_re.findall(note)
-                    tickets.update(matches)
-                    
+                    tickets.update(f"[ [{matches}]({JIRA_URL_PREFIX + matches}) ]")
+
                     # Replace ticket IDs with parenthesized version
-                    formatted_note = ticket_re.sub(lambda m: f"({m.group(0)})", note)
+                    formatted_note = ticket_re.sub(lambda m: f"[ [{m.group(0)}]({JIRA_URL_PREFIX + m.group(0)}) ]", note)
                     formatted_notes.append(formatted_note)
-                
+
                 formatted_scoped_notes[scope] = formatted_notes
-            
+
             formatted_categorised_messages[heading] = formatted_scoped_notes
 
         return list(tickets), formatted_categorised_messages
@@ -509,18 +509,19 @@ class PullRequestDescriptionGenerator:
 
         contents_section = ""
 
-        tickets, formatted_messages = self._extract_and_format_tickets(categorised_commit_messages)
+        tickets, formatted_messages = self._extract_and_format_tickets(
+            categorised_commit_messages
+        )
 
         # contents_section += f"{self.header}\n\n"
-        
+
         if tickets:
             contents_section += "# Tickets\n\n"
             # Dedup keys maintaining insertion order using dict.fromkeys(tickets).keys() instead of set(tickets)
             contents_section += "\n".join(
-                self.list_item_symbol + note
-                for note in dict.fromkeys(tickets).keys()
+                self.list_item_symbol + note for note in dict.fromkeys(tickets).keys()
             )
-        
+
             contents_section += "\n\n"
 
         if breaking_change_count:
@@ -592,8 +593,7 @@ class PullRequestDescriptionGenerator:
 
             # Add the bulleted list of notes under this scope
             note_lines = "\n".join(
-                " - " + (note[:1].upper() + note[1:])
-                for note in notes
+                " - " + (note[:1].upper() + note[1:]) for note in notes
             )
             subsection += f"{note_lines}\n\n"
 
