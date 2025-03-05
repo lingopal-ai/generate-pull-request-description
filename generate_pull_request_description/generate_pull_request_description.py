@@ -472,6 +472,8 @@ class PullRequestDescriptionGenerator:
         tickets = set()
         formatted_categorised_messages = {}
 
+        logger.warning("PR:", self.current_pull_request)
+
         for heading, scoped_notes in categorised_commit_messages.items():
             formatted_scoped_notes = {}
             for scope, notes in sorted(scoped_notes.items()):
@@ -480,7 +482,7 @@ class PullRequestDescriptionGenerator:
                     # Find and extract ticket IDs
                     matches = ticket_re.findall(note)
                     for match in matches:
-                        tickets.add(f"[ [{match}]({JIRA_URL_PREFIX + match}) ]")
+                        tickets.add(f"{match}]({JIRA_URL_PREFIX + match})")
 
                     # Replace ticket IDs with parenthesized version
                     formatted_note = ticket_re.sub(lambda m: f"[ [{m.group(0)}]({JIRA_URL_PREFIX + m.group(0)}) ]", note)
@@ -520,7 +522,7 @@ class PullRequestDescriptionGenerator:
             contents_section += "# Tickets\n\n"
             # Dedup keys maintaining insertion order using dict.fromkeys(tickets).keys() instead of set(tickets)
             contents_section += "\n".join(
-                self.list_item_symbol + note for note in dict.fromkeys(tickets).keys()
+                " - " + note for note in dict.fromkeys(tickets).keys()
             )
 
             contents_section += "\n\n"
