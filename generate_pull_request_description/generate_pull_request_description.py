@@ -482,7 +482,7 @@ class PullRequestDescriptionGenerator:
 
 
         for heading, notes in categorised_commit_messages.items():
-            logger.warning(f"Heading: {headings}")
+            logger.warning(f"Heading: {heading}")
             logger.warning(f"Notes: {notes}")
             for note in notes:
                 matches = ticket_re.findall(note)
