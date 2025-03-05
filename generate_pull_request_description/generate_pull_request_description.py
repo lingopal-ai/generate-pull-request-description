@@ -472,7 +472,7 @@ class PullRequestDescriptionGenerator:
         tickets = set()
         formatted_categorised_messages = {}
 
-        logger.warning("PR:", self.current_pull_request)
+        logger.warning("PR:", self.current_pull_request["commits"])
 
         for heading, scoped_notes in categorised_commit_messages.items():
             formatted_scoped_notes = {}
