@@ -495,7 +495,12 @@ class PullRequestDescriptionGenerator:
 
             formatted_categorised_messages[heading] = formatted_scoped_notes
 
-        return list(tickets), formatted_categorised_messages
+        def extract_ticket_number(link: str) -> int:
+            # Extract ticket number from markdown link
+            match = ticket_re.search(link)
+            return int(match.group(1)) if match else float('inf')
+
+        return sorted(tickets, key=extract_ticket_number), formatted_categorised_messages
 
     def _create_contents_section(
         self, categorised_commit_messages, breaking_change_count
