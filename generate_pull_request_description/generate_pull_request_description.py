@@ -604,7 +604,7 @@ class PullRequestDescriptionGenerator:
 
             # Add the bulleted list of notes under this scope
             note_lines = "\n".join(
-                " - " + (note[:1].upper() + note[1:]) for note in notes
+                " - " + note.capitalize() for note in notes
             )
             subsection += f"{note_lines}\n\n"
 
