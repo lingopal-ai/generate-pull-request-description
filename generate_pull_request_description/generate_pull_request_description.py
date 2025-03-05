@@ -479,7 +479,8 @@ class PullRequestDescriptionGenerator:
                 for note in notes:
                     # Find and extract ticket IDs
                     matches = ticket_re.findall(note)
-                    tickets.update(f"[ [{matches}]({JIRA_URL_PREFIX + matches}) ]")
+                    for match in matches:
+                        tickets.add(f"[ [{match}]({JIRA_URL_PREFIX + match}) ]")
 
                     # Replace ticket IDs with parenthesized version
                     formatted_note = ticket_re.sub(lambda m: f"[ [{m.group(0)}]({JIRA_URL_PREFIX + m.group(0)}) ]", note)
