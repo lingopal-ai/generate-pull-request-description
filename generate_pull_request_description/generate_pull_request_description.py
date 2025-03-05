@@ -84,7 +84,7 @@ class PullRequestDescriptionGenerator:
         pull_request_url=None,
         api_token=None,
         header="# Changelog",
-        list_item_symbol="-",
+        list_item_symbol=" - ",
         commit_codes_to_headings_mapping=None,
         include_link_to_pull_request=True,
     ):
@@ -113,7 +113,6 @@ class PullRequestDescriptionGenerator:
         )
         self.include_link_to_pull_request = include_link_to_pull_request
 
-        logger.info(f"Args: {self.__dict__}")
         logger.info(f"Using {self.stop_point!r} stop point.")
 
     def generate(self):
@@ -459,6 +458,39 @@ class PullRequestDescriptionGenerator:
             ]
         )
 
+    def _extract_and_format_tickets(self, categorised_commit_messages):
+        """
+        Extract unique ticket IDs from commit messages and format them in notes.
+        
+        Args:
+            categorised_commit_messages (Dict): Nested dictionary of commit messages
+        
+        Returns:
+            List[str]: List of unique ticket IDs
+        """
+        ticket_re = re.compile(r"[a-zA-Z]{2,6}-\d+")
+        tickets = set()
+        formatted_categorised_messages = {}
+
+        for heading, scoped_notes in categorised_commit_messages.items():
+            formatted_scoped_notes = {}
+            for scope, notes in sorted(scoped_notes.items()):
+                formatted_notes = []
+                for note in notes:
+                    # Find and extract ticket IDs
+                    matches = ticket_re.findall(note)
+                    tickets.update(matches)
+                    
+                    # Replace ticket IDs with parenthesized version
+                    formatted_note = ticket_re.sub(lambda m: f"({m.group(0)})", note)
+                    formatted_notes.append(formatted_note)
+                
+                formatted_scoped_notes[scope] = formatted_notes
+            
+            formatted_categorised_messages[heading] = formatted_scoped_notes
+
+        return list(tickets), formatted_categorised_messages
+
     def _create_contents_section(
         self, categorised_commit_messages, breaking_change_count
     ):
@@ -477,29 +509,15 @@ class PullRequestDescriptionGenerator:
 
         contents_section = ""
 
-        ticket_re = re.compile(r"[a-zA-Z]{2,6}-\d+")
-        tickets = []
-
-        for heading, scoped_notes in categorised_commit_messages.items():
-            for _, notes in sorted(scoped_notes.items()):
-                logger.warning(f"Notes: {notes}")
-                if not notes:
-                    continue
-                for note in notes:
-                    matches = ticket_re.findall(note)
-                    for match in matches:
-                        tickets.append(match)
-
-        
-        logger.warning(f"Tickets: {tickets}")
+        tickets, formatted_messages = self._extract_and_format_tickets(categorised_commit_messages)
 
         # contents_section += f"{self.header}\n\n"
         
         if tickets:
-            contents_section += "# Tickets\n"
+            contents_section += "# Tickets\n\n"
             # Dedup keys maintaining insertion order using dict.fromkeys(tickets).keys() instead of set(tickets)
             contents_section += "\n".join(
-                self.list_item_symbol + " " + note
+                self.list_item_symbol + note
                 for note in dict.fromkeys(tickets).keys()
             )
 
@@ -509,7 +527,7 @@ class PullRequestDescriptionGenerator:
             )
 
         # Process regular sections first (excluding OTHER and UNCATEGORISED)
-        for heading, scoped_notes in categorised_commit_messages.items():
+        for heading, scoped_notes in formatted_messages.items():
             # Skip special sections and empty sections
             if (
                 heading
@@ -529,7 +547,7 @@ class PullRequestDescriptionGenerator:
 
         # Process OTHER and UNCATEGORISED sections last, but only if they have content
         for heading in (OTHER_SECTION_HEADING, UNCATEGORISED_SECTION_HEADING):
-            scoped_notes = categorised_commit_messages.get(heading, {})
+            scoped_notes = formatted_messages.get(heading, {})
 
             # Check if there are any actual notes in any of the scopes
             if scoped_notes and any(notes for scope, notes in scoped_notes.items()):
